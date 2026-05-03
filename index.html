@@ -190,6 +190,33 @@
       .score-card { grid-template-columns: 1fr; }
       header h1 { font-size: 1.6rem; }
     }
+  
+    .teacher-panel {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .teacher-panel h2 {
+      color: #9a3412;
+      margin-top: 0;
+    }
+
+    .grade-output {
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 120px;
+      white-space: pre-wrap;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+
+    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -223,6 +250,16 @@
           </div>
           <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
           <button class="btn-success" onclick="exportScoreReport()">Export Score Report</button>
+          <button class="btn-dark" onclick="generateGradeOutput()">Generate Grade Output</button>
+        </div>
+
+        <div class="teacher-panel">
+          <h2>Teacher View + Grade Output</h2>
+          <p class="small">Use this after a student finishes the lab. The summary can be copied into Schoology comments, a gradebook note, or a student evidence log.</p>
+          <button class="btn-primary" onclick="generateGradeOutput()">Refresh Grade Summary</button>
+          <button class="btn-warning" onclick="copyGradeOutput()">Copy Grade Summary</button>
+          <button class="btn-success" onclick="exportTeacherDashboardPDF()">Export Teacher Dashboard PDF</button>
+          <div id="gradeOutput" class="grade-output">No grade summary generated yet.</div>
         </div>
 
         <div class="card">
@@ -646,6 +683,53 @@ JOIN Courses ON Grades.CourseID = Courses.CourseID;',
       doc.autoTable({ head: [['Challenge', 'Status', 'Points']], body: rows, startY: 66, styles: { fontSize: 10 }, headStyles: { fillColor: [31, 58, 95] } });
       doc.save('sql-lab-score-report.pdf');
       showMessage('Score report exported successfully.', 'success');
+    }
+
+    function generateGradeOutput() {
+      const name = currentStudent?.name || document.getElementById('studentName').value.trim() || 'Student not entered';
+      const period = currentStudent?.period || document.getElementById('classPeriod').value.trim() || 'Not provided';
+      const points = passedChallenges.size * 20;
+      const percent = Math.round((passedChallenges.size / challenges.length) * 100);
+      const letter = getLetterGrade(percent);
+      const completed = challenges
+        .map(c => `${passedChallenges.has(c.id) ? '✅' : '⬜'} ${c.title}: ${passedChallenges.has(c.id) ? 'Passed' : 'Not Passed'}`)
+        .join('\n');
+
+      const output = `SQL LAB GRADE SUMMARY\n\nStudent: ${name}\nClass Period: ${period}\nDate/Time: ${new Date().toLocaleString()}\n\nScore: ${points}/100\nPercentage: ${percent}%\nLetter Grade: ${letter}\nChallenges Passed: ${passedChallenges.size}/${challenges.length}\n\nChallenge Evidence:\n${completed}\n\nTeacher Note: Student score is based on auto-scored SQL query results completed in the Student SQL Database Lab.`;
+
+      document.getElementById('gradeOutput').textContent = output;
+      showMessage('Teacher grade output generated.', 'success');
+      return output;
+    }
+
+    function copyGradeOutput() {
+      const output = generateGradeOutput();
+      navigator.clipboard.writeText(output).then(() => {
+        showMessage('Grade summary copied to clipboard.', 'success');
+      }).catch(() => {
+        showMessage('Copy did not work in this browser. Highlight the grade summary and copy it manually.', 'error');
+      });
+    }
+
+    function exportTeacherDashboardPDF() {
+      const output = generateGradeOutput();
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const lines = doc.splitTextToSize(output, 180);
+      doc.setFontSize(16);
+      doc.text('Teacher Dashboard Grade Output', 14, 18);
+      doc.setFontSize(10);
+      doc.text(lines, 14, 30);
+      doc.save('teacher-dashboard-grade-output.pdf');
+      showMessage('Teacher dashboard PDF exported successfully.', 'success');
+    }
+
+    function getLetterGrade(percent) {
+      if (percent >= 90) return 'A';
+      if (percent >= 80) return 'B';
+      if (percent >= 70) return 'C';
+      if (percent >= 60) return 'D';
+      return 'F';
     }
 
     function resetQuery() {
