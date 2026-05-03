@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student SQL Database Lab</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root {
+      --navy: #1f3a5f;
+      --blue: #3b82f6;
+      --light: #f4f7fb;
+      --green: #16a34a;
+      --orange: #f59e0b;
+      --red: #dc2626;
+      --gray: #334155;
+      --border: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--light);
+      color: #111827;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      color: white;
+      padding: 24px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    header p {
+      margin: 8px auto 0;
+      max-width: 780px;
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 16px 32px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .card h2, .card h3 {
+      margin-top: 0;
+      color: var(--navy);
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin: 12px 0 6px;
+    }
+
+    select, textarea, input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.95rem;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+      font-family: Consolas, Monaco, monospace;
+      line-height: 1.45;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 8px 6px 0 0;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--green);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--orange);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--red);
+      color: white;
+    }
+
+    .schema-list {
+      font-size: 0.92rem;
+      line-height: 1.5;
+      padding-left: 18px;
+    }
+
+    .message {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .message.success {
+      display: block;
+      background: #dcfce7;
+      border: 1px solid #86efac;
+      color: #166534;
+    }
+
+    .message.error {
+      display: block;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .results-wrap {
+      overflow-x: auto;
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      min-width: 560px;
+    }
+
+    th {
+      background: var(--navy);
+      color: white;
+      text-align: left;
+      padding: 10px;
+    }
+
+    td {
+      border-top: 1px solid var(--border);
+      padding: 9px 10px;
+    }
+
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .challenge {
+      background: #eff6ff;
+      border-left: 5px solid var(--blue);
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .small {
+      font-size: 0.9rem;
+      color: var(--gray);
+      line-height: 1.45;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--gray);
+      padding: 18px;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 850px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Student SQL Database Lab</h1>
+    <p>Use SQL queries to explore student, course, grade, attendance, and activity data. Run guided queries, edit your own SQL, and export your results as a PDF report.</p>
+  </header>
+
+  <main>
+    <section class="grid">
+      <aside class="card">
+        <h2>Database Tables</h2>
+        <ul class="schema-list">
+          <li><strong>Students</strong>: StudentID, FirstName, LastName, GradeLevel, Academy</li>
+          <li><strong>Courses</strong>: CourseID, CourseName, Teacher, Department</li>
+          <li><strong>Grades</strong>: GradeID, StudentID, CourseID, Quarter, Grade</li>
+          <li><strong>Attendance</strong>: AttendanceID, StudentID, Month, DaysPresent, DaysAbsent</li>
+          <li><strong>Activities</strong>: ActivityID, StudentID, ActivityName, Category</li>
+        </ul>
+
+        <h3>Student Challenges</h3>
+        <div class="challenge">1. Find all students in Grade 10.</div>
+        <div class="challenge">2. Find students with grades of 90 or higher.</div>
+        <div class="challenge">3. Calculate the average grade by course.</div>
+        <div class="challenge">4. Identify students with more than 2 absences in a month.</div>
+        <div class="challenge">5. Create a report showing student names, courses, and grades.</div>
+
+        <p class="small"><strong>Teacher Tip:</strong> Students can use the guided query menu first, then modify the SQL to answer new questions.</p>
+      </aside>
+
+      <section class="card">
+        <h2>SQL Query Workspace</h2>
+
+        <label for="querySelect">Choose a Guided Query</label>
+        <select id="querySelect" onchange="loadQuery()">
+          <option value="">-- Select a query --</option>
+          <option value="allStudents">Show all students</option>
+          <option value="grade10">Show Grade 10 students</option>
+          <option value="highGrades">Show grades of 90 or higher</option>
+          <option value="averageByCourse">Average grade by course</option>
+          <option value="studentCourseGrades">Student course grade report</option>
+          <option value="attendanceConcern">Students with more than 2 absences</option>
+          <option value="activities">Student activities report</option>
+        </select>
+
+        <label for="sqlInput">SQL Query</label>
+        <textarea id="sqlInput">SELECT * FROM Students;</textarea>
+
+        <button class="btn-primary" onclick="runQuery()">Run Query</button>
+        <button class="btn-success" onclick="exportPDF()">Export Results to PDF</button>
+        <button class="btn-warning" onclick="resetQuery()">Reset Query</button>
+        <button class="btn-danger" onclick="clearResults()">Clear Results</button>
+
+        <div id="message" class="message"></div>
+
+        <h3>Query Results</h3>
+        <div id="results" class="results-wrap">
+          <table>
+            <thead><tr><th>Run a query to see results</th></tr></thead>
+            <tbody><tr><td>No data displayed yet.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    Classroom SQL Lab | Designed for high school business, computer science, and data literacy courses
+  </footer>
+
+  <script>
+    let db;
+    let lastColumns = [];
+    let lastRows = [];
+
+    const guidedQueries = {
+      allStudents: `SELECT * FROM Students;`,
+      grade10: `SELECT FirstName, LastName, GradeLevel, Academy\nFROM Students\nWHERE GradeLevel = 10;`,
+      highGrades: `SELECT Students.FirstName, Students.LastName, Courses.CourseName, Grades.Quarter, Grades.Grade\nFROM Grades\nJOIN Students ON Grades.StudentID = Students.StudentID\nJOIN Courses ON Grades.CourseID = Courses.CourseID\nWHERE Grades.Grade >= 90\nORDER BY Grades.Grade DESC;`,
+      averageByCourse: `SELECT Courses.CourseName, ROUND(AVG(Grades.Grade), 2) AS AverageGrade\nFROM Grades\nJOIN Courses ON Grades.CourseID = Courses.CourseID\nGROUP BY Courses.CourseName\nORDER BY AverageGrade DESC;`,
+      studentCourseGrades: `SELECT Students.FirstName, Students.LastName, Courses.CourseName, Courses.Teacher, Grades.Quarter, Grades.Grade\nFROM Grades\nJOIN Students ON Grades.StudentID = Students.StudentID\nJOIN Courses ON Grades.CourseID = Courses.CourseID\nORDER BY Students.LastName, Courses.CourseName;`,
+      attendanceConcern: `SELECT Students.FirstName, Students.LastName, Attendance.Month, Attendance.DaysPresent, Attendance.DaysAbsent\nFROM Attendance\nJOIN Students ON Attendance.StudentID = Students.StudentID\nWHERE Attendance.DaysAbsent > 2\nORDER BY Attendance.DaysAbsent DESC;`,
+      activities: `SELECT Students.FirstName, Students.LastName, Activities.ActivityName, Activities.Category\nFROM Activities\nJOIN Students ON Activities.StudentID = Students.StudentID\nORDER BY Activities.Category, Activities.ActivityName;`
+    };
+
+    async function initDatabase() {
+      const SQL = await initSqlJs({
+        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
+      });
+
+      db = new SQL.Database();
+
+      db.run(`
+        CREATE TABLE Students (
+          StudentID INTEGER PRIMARY KEY,
+          FirstName TEXT,
+          LastName TEXT,
+          GradeLevel INTEGER,
+          Academy TEXT
+        );
+
+        CREATE TABLE Courses (
+          CourseID INTEGER PRIMARY KEY,
+          CourseName TEXT,
+          Teacher TEXT,
+          Department TEXT
+        );
+
+        CREATE TABLE Grades (
+          GradeID INTEGER PRIMARY KEY,
+          StudentID INTEGER,
+          CourseID INTEGER,
+          Quarter TEXT,
+          Grade REAL,
+          FOREIGN KEY(StudentID) REFERENCES Students(StudentID),
+          FOREIGN KEY(CourseID) REFERENCES Courses(CourseID)
+        );
+
+        CREATE TABLE Attendance (
+          AttendanceID INTEGER PRIMARY KEY,
+          StudentID INTEGER,
+          Month TEXT,
+          DaysPresent INTEGER,
+          DaysAbsent INTEGER,
+          FOREIGN KEY(StudentID) REFERENCES Students(StudentID)
+        );
+
+        CREATE TABLE Activities (
+          ActivityID INTEGER PRIMARY KEY,
+          StudentID INTEGER,
+          ActivityName TEXT,
+          Category TEXT,
+          FOREIGN KEY(StudentID) REFERENCES Students(StudentID)
+        );
+
+        INSERT INTO Students VALUES
+          (1, 'Aaliyah', 'Johnson', 9, 'Business & Technology'),
+          (2, 'Carlos', 'Rivera', 10, 'Computer Science'),
+          (3, 'Maya', 'Patel', 11, 'Business & Technology'),
+          (4, 'Daniel', 'Kim', 10, 'Engineering'),
+          (5, 'Sofia', 'Garcia', 12, 'Computer Science'),
+          (6, 'Marcus', 'Brown', 11, 'Business & Technology'),
+          (7, 'Amara', 'Williams', 9, 'Health Sciences'),
+          (8, 'Noah', 'Chen', 12, 'Engineering'),
+          (9, 'Leila', 'Hassan', 10, 'Computer Science'),
+          (10, 'Jayden', 'Miller', 11, 'Business & Technology');
+
+        INSERT INTO Courses VALUES
+          (101, 'Business Applications', 'Ms. Carter', 'Business'),
+          (102, 'Computer Science Principles', 'Mr. Lopez', 'Computer Science'),
+          (103, 'Personal Finance', 'Mrs. Nguyen', 'Business'),
+          (104, 'Intro to Cybersecurity', 'Mr. Thompson', 'Computer Science');
+
+        INSERT INTO Grades VALUES
+          (1, 1, 101, 'Q1', 88),
+          (2, 2, 102, 'Q1', 94),
+          (3, 3, 103, 'Q1', 91),
+          (4, 4, 102, 'Q1', 82),
+          (5, 5, 104, 'Q1', 96),
+          (6, 6, 101, 'Q1', 79),
+          (7, 7, 103, 'Q1', 85),
+          (8, 8, 104, 'Q1', 90),
+          (9, 9, 102, 'Q1', 93),
+          (10, 10, 101, 'Q1', 87),
+          (11, 2, 104, 'Q1', 89),
+          (12, 5, 102, 'Q1', 98),
+          (13, 3, 101, 'Q1', 92),
+          (14, 6, 103, 'Q1', 84),
+          (15, 9, 104, 'Q1', 95);
+
+        INSERT INTO Attendance VALUES
+          (1, 1, 'September', 18, 2),
+          (2, 2, 'September', 20, 0),
+          (3, 3, 'September', 19, 1),
+          (4, 4, 'September', 16, 4),
+          (5, 5, 'September', 20, 0),
+          (6, 6, 'September', 17, 3),
+          (7, 7, 'September', 18, 2),
+          (8, 8, 'September', 19, 1),
+          (9, 9, 'September', 20, 0),
+          (10, 10, 'September', 15, 5);
+
+        INSERT INTO Activities VALUES
+          (1, 1, 'FBLA', 'Career & Technical Student Organization'),
+          (2, 2, 'Robotics Club', 'STEM'),
+          (3, 3, 'Student Government', 'Leadership'),
+          (4, 4, 'Esports Club', 'Technology'),
+          (5, 5, 'CyberPatriot', 'STEM'),
+          (6, 6, 'FBLA', 'Career & Technical Student Organization'),
+          (7, 7, 'Debate Team', 'Academic'),
+          (8, 8, 'Robotics Club', 'STEM'),
+          (9, 9, 'Coding Club', 'Technology'),
+          (10, 10, 'Yearbook', 'Media');
+      `);
+
+      showMessage('Database loaded. You are ready to run SQL queries.', 'success');
+    }
+
+    function loadQuery() {
+      const selected = document.getElementById('querySelect').value;
+      if (selected && guidedQueries[selected]) {
+        document.getElementById('sqlInput').value = guidedQueries[selected];
+      }
+    }
+
+    function runQuery() {
+      const sql = document.getElementById('sqlInput').value.trim();
+      const resultsDiv = document.getElementById('results');
+
+      if (!sql) {
+        showMessage('Please enter a SQL query before running.', 'error');
+        return;
+      }
+
+      try {
+        const result = db.exec(sql);
+
+        if (result.length === 0) {
+          resultsDiv.innerHTML = '<table><thead><tr><th>Result</th></tr></thead><tbody><tr><td>Query ran successfully, but no rows were returned.</td></tr></tbody></table>';
+          lastColumns = ['Result'];
+          lastRows = [['Query ran successfully, but no rows were returned.']];
+          showMessage('Query completed successfully.', 'success');
+          return;
+        }
+
+        lastColumns = result[0].columns;
+        lastRows = result[0].values;
+        renderTable(lastColumns, lastRows);
+        showMessage(`Query completed successfully. ${lastRows.length} row(s) returned.`, 'success');
+      } catch (err) {
+        showMessage('SQL Error: ' + err.message, 'error');
+      }
+    }
+
+    function renderTable(columns, rows) {
+      let html = '<table><thead><tr>';
+      columns.forEach(col => html += `<th>${escapeHtml(col)}</th>`);
+      html += '</tr></thead><tbody>';
+
+      rows.forEach(row => {
+        html += '<tr>';
+        row.forEach(cell => html += `<td>${escapeHtml(String(cell ?? ''))}</td>`);
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      document.getElementById('results').innerHTML = html;
+    }
+
+    function exportPDF() {
+      if (!lastColumns.length || !lastRows.length) {
+        showMessage('Run a query first before exporting a PDF.', 'error');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape' });
+      const queryText = document.getElementById('sqlInput').value.trim();
+
+      doc.setFontSize(16);
+      doc.text('Student SQL Database Report', 14, 16);
+      doc.setFontSize(10);
+      doc.text('Generated: ' + new Date().toLocaleString(), 14, 24);
+      doc.text('Query:', 14, 34);
+
+      const splitQuery = doc.splitTextToSize(queryText, 260);
+      doc.text(splitQuery, 14, 40);
+
+      const startY = 44 + splitQuery.length * 5;
+      doc.autoTable({
+        head: [lastColumns],
+        body: lastRows,
+        startY: startY,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [31, 58, 95] }
+      });
+
+      doc.save('student-sql-database-report.pdf');
+      showMessage('PDF report exported successfully.', 'success');
+    }
+
+    function resetQuery() {
+      document.getElementById('sqlInput').value = 'SELECT * FROM Students;';
+      document.getElementById('querySelect').value = '';
+      showMessage('Query reset to the starter query.', 'success');
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = '<table><thead><tr><th>Run a query to see results</th></tr></thead><tbody><tr><td>No data displayed yet.</td></tr></tbody></table>';
+      lastColumns = [];
+      lastRows = [];
+      showMessage('Results cleared.', 'success');
+    }
+
+    function showMessage(text, type) {
+      const message = document.getElementById('message');
+      message.textContent = text;
+      message.className = 'message ' + type;
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    initDatabase();
+  </script>
+</body>
+</html>
