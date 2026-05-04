@@ -381,9 +381,7 @@ ORDER BY Activities.Category, Activities.ActivityName;`
         title: 'Challenge 1: Grade 10 Students',
         prompt: 'Write a SQL query that returns all students in Grade 10.',
         hint: 'Use the Students table and filter with WHERE GradeLevel = 10.',
-        starter: 'SELECT *
-FROM Students
-WHERE GradeLevel = 10;',
+        starter: `SELECT *\nFROM Students\nWHERE GradeLevel = 10;`,
         expectedRows: 3,
         validator: rows => rows.length === 3 && containsColumnValue(rows, 'GradeLevel', 10)
       },
@@ -392,9 +390,7 @@ WHERE GradeLevel = 10;',
         title: 'Challenge 2: High Grades',
         prompt: 'Write a SQL query that returns grades that are 90 or higher.',
         hint: 'Use the Grades table and filter with WHERE Grade >= 90.',
-        starter: 'SELECT *
-FROM Grades
-WHERE Grade >= 90;',
+        starter: `SELECT *\nFROM Grades\nWHERE Grade >= 90;`,
         expectedRows: 7,
         validator: rows => rows.length === 7 && everyNumericColumnAtLeast(rows, 'Grade', 90)
       },
@@ -403,10 +399,7 @@ WHERE Grade >= 90;',
         title: 'Challenge 3: Average Grade by Course',
         prompt: 'Write a SQL query that calculates the average grade for each course.',
         hint: 'JOIN Courses and Grades, use AVG(Grade), and GROUP BY CourseName.',
-        starter: 'SELECT Courses.CourseName, ROUND(AVG(Grades.Grade), 2) AS AverageGrade
-FROM Grades
-JOIN Courses ON Grades.CourseID = Courses.CourseID
-GROUP BY Courses.CourseName;',
+        starter: `SELECT Courses.CourseName, ROUND(AVG(Grades.Grade), 2) AS AverageGrade\nFROM Grades\nJOIN Courses ON Grades.CourseID = Courses.CourseID\nGROUP BY Courses.CourseName;`,
         expectedRows: 4,
         validator: rows => rows.length === 4 && hasColumn('AverageGrade')
       },
@@ -415,10 +408,7 @@ GROUP BY Courses.CourseName;',
         title: 'Challenge 4: Attendance Concern',
         prompt: 'Write a SQL query that identifies students with more than 2 absences.',
         hint: 'JOIN Students and Attendance. Filter with DaysAbsent > 2.',
-        starter: 'SELECT Students.FirstName, Students.LastName, Attendance.Month, Attendance.DaysAbsent
-FROM Attendance
-JOIN Students ON Attendance.StudentID = Students.StudentID
-WHERE Attendance.DaysAbsent > 2;',
+        starter: `SELECT Students.FirstName, Students.LastName, Attendance.Month, Attendance.DaysAbsent\nFROM Attendance\nJOIN Students ON Attendance.StudentID = Students.StudentID\nWHERE Attendance.DaysAbsent > 2;`,
         expectedRows: 3,
         validator: rows => rows.length === 3 && everyNumericColumnGreaterThan(rows, 'DaysAbsent', 2)
       },
@@ -427,10 +417,7 @@ WHERE Attendance.DaysAbsent > 2;',
         title: 'Challenge 5: Student Course Grade Report',
         prompt: 'Write a SQL query that displays student names, course names, and grades.',
         hint: 'JOIN Students, Grades, and Courses. Include FirstName, LastName, CourseName, and Grade.',
-        starter: 'SELECT Students.FirstName, Students.LastName, Courses.CourseName, Grades.Grade
-FROM Grades
-JOIN Students ON Grades.StudentID = Students.StudentID
-JOIN Courses ON Grades.CourseID = Courses.CourseID;',
+        starter: `SELECT Students.FirstName, Students.LastName, Courses.CourseName, Grades.Grade\nFROM Grades\nJOIN Students ON Grades.StudentID = Students.StudentID\nJOIN Courses ON Grades.CourseID = Courses.CourseID;`,
         expectedRows: 15,
         validator: rows => rows.length === 15 && hasColumn('FirstName') && hasColumn('LastName') && hasColumn('CourseName') && hasColumn('Grade')
       }
@@ -786,10 +773,11 @@ async function submitScore() {
   try {
     await fetch("https://script.google.com/macros/s/AKfycbxE2sAcFaCiv0fb55-_nVNqZ2lHtln5qdqgs5ToGT-9MpcIaHT2l8m96skPJbKi1fZ5/exec", {
       method: "POST",
-      body: JSON.stringify(data),
+      mode: "no-cors",
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify(data)
     });
 
     showMessage('Score submitted successfully!', 'success');
