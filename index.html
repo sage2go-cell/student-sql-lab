@@ -250,6 +250,9 @@
           </div>
           <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
           <button class="btn-success" onclick="exportScoreReport()">Export Score Report</button>
+          <button class="btn-primary" onclick="submitScore()">
+            Submit Score
+          </button>
           <button class="btn-dark" onclick="generateGradeOutput()">Generate Grade Output</button>
         </div>
 
@@ -764,6 +767,37 @@ JOIN Courses ON Grades.CourseID = Courses.CourseID;',
     function everyNumericColumnAtLeast(rows, column, min) { return rows.every(row => Number(row[column]) >= min); }
     function everyNumericColumnGreaterThan(rows, column, min) { return rows.every(row => Number(row[column]) > min); }
 
+async function submitScore() {
+  if (!currentStudent) {
+    showMessage('Please log in before submitting your score.', 'error');
+    return;
+  }
+
+  const points = passedChallenges.size * 20;
+  const percent = Math.round((passedChallenges.size / challenges.length) * 100);
+
+  const data = {
+    name: currentStudent.name,
+    period: currentStudent.period || 'N/A',
+    score: points,
+    percent: percent
+  };
+
+  try {
+    await fetch("https://script.google.com/macros/s/AKfycbxE2sAcFaCiv0fb55-_nVNqZ2lHtln5qdqgs5ToGT-9MpcIaHT2l8m96skPJbKi1fZ5/exec", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    showMessage('Score submitted successfully!', 'success');
+  } catch (err) {
+    showMessage('Submission failed. Try again.', 'error');
+  }
+}
+    
     initDatabase();
   </script>
 </body>
